@@ -2,6 +2,9 @@ const express = require("express");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const mongoose = require("mongoose");
+const Cohort = require("./models/cohort.model");
+const Student = require("./models/students.model");
 const PORT = 5005;
 
 // STATIC DATA
@@ -12,6 +15,12 @@ const cohorts = require("./cohorts.json");
 
 // INITIALIZE EXPRESS APP - https://expressjs.com/en/4x/api.html#express
 const app = express();
+
+//Database
+mongoose
+  .connect("mongodb://127.0.0.1:27017/cohort-tools-api")
+  .then((x) => console.log(`Connected to Database: "${x.connections[0].name}"`))
+  .catch((err) => console.error("Error connecting to MongoDB", err));
 
 // MIDDLEWARE
 // Research Team - Set up CORS middleware here:
@@ -32,11 +41,22 @@ app.use(cookieParser());
 app.get("/docs", (req, res) => {
   res.sendFile(__dirname + "/views/docs.html");
 });
-app.get("/api/cohorts", (req, res) => {
-  res.json(cohorts);
+app.get("/api/cohorts", async (req, res) => {
+  try {
+    const cohorts = await Cohort.find();
+    res.json(cohorts);
+  } catch (err) {
+    res.status(500).send("Failed to fetch cohorts from database");
+  }
 });
-app.get("/api/students", (req, res) => {
-  res.json(students);
+
+app.get("/api/students", async (req, res) => {
+  try {
+    const students = await Student.find().populate("cohort");
+    res.json(students);
+  } catch (err) {
+    res.status(500).send("Failed to fetch students from database");
+  }
 });
 // START SERVER
 app.listen(PORT, () => {
