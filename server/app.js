@@ -3,15 +3,16 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const Cohort = require("./models/cohort.model");
-const Student = require("./models/students.model");
+const studentRouter = require("./routes/students.routes");
+const cohortRouter = require("./routes/cohort.routes");
+const authRouter = require("./routes/auth.routes");
+const userRouter = require("./routes/user.routes");
 const PORT = 5005;
-
-// STATIC DATA
-// Devs Team - Import the provided files with JSON data of students and cohorts here:
-
-const students = require("./students.json");
-const cohorts = require("./cohorts.json");
+require("dotenv").config();
+const {
+  errorHandler,
+  notFoundHandler,
+} = require("./error-handling/error-handling");
 
 // INITIALIZE EXPRESS APP - https://expressjs.com/en/4x/api.html#express
 const app = express();
@@ -36,28 +37,21 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 // ROUTES - https://expressjs.com/en/starter/basic-routing.html
-// Devs Team - Start working on the routes here:
-// ...
-app.get("/docs", (req, res) => {
+
+//ROUTES//Middlewares
+app.use("/docs", (req, res) => {
   res.sendFile(__dirname + "/views/docs.html");
 });
-app.get("/api/cohorts", async (req, res) => {
-  try {
-    const cohorts = await Cohort.find();
-    res.json(cohorts);
-  } catch (err) {
-    res.status(500).send("Failed to fetch cohorts from database");
-  }
-});
 
-app.get("/api/students", async (req, res) => {
-  try {
-    const students = await Student.find().populate("cohort");
-    res.json(students);
-  } catch (err) {
-    res.status(500).send("Failed to fetch students from database");
-  }
-});
+app.use("/", studentRouter);
+app.use("/", cohortRouter);
+app.use("/", authRouter);
+app.use("/", userRouter);
+
+//ERROR Middlewares
+app.use(errorHandler);
+app.use(notFoundHandler);
+
 // START SERVER
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
